@@ -565,6 +565,7 @@ export interface ResponseJSON<T> {
   data: T;
   message: string;
   status: number;
+  devError?: unknown;
 }
 
 export interface IDataResponseVideoInf {

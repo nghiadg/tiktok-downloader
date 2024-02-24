@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
       data: null,
       message: "Network error",
       status: 500,
+      devError: error,
     });
   }
 }
