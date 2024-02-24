@@ -6,6 +6,8 @@ import {
   ResponseJSON,
 } from "./interface";
 
+export const dynamic = "force-dynamic";
+
 const API_URL =
   "https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=";
 
