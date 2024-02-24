@@ -99,6 +99,7 @@ const Home = () => {
             <div className="flex-1">
               <input
                 type="text"
+                placeholder="Paste tiktok video url"
                 className="h-full w-full outline-none"
                 value={videoUrl}
                 onChange={changeVideoUrl}
