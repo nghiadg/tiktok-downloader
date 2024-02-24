@@ -1,95 +1,145 @@
+"use client";
+import { AppButton } from "@/components/base";
 import Image from "next/image";
-import styles from "./page.module.css";
+import React, { useCallback, useState } from "react";
+import { IDataResponseVideoInf, ResponseJSON } from "./api/videos/interface";
 
-export default function Home() {
+const Home = () => {
+  const [videoUrl, setVideoUrl] = useState<string>("");
+  const [errorMsg, setErrorMsg] = useState<string>("");
+  const [videoInf, setVideoInf] = useState<IDataResponseVideoInf>();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [downloading, setDownloading] = useState<boolean>(false);
+
+  const changeVideoUrl = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setVideoUrl(e.target.value);
+    },
+    []
+  );
+
+  const getVideoInf = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Validate url before call API
+      const url = new URL(videoUrl);
+      if (url.hostname !== "www.tiktok.com") {
+        throw new Error("URL is wrong.");
+      }
+
+      const res = await fetch(
+        "/api/videos?" +
+          new URLSearchParams({
+            url: videoUrl,
+          }),
+        {
+          method: "GET",
+        }
+      );
+
+      const data: ResponseJSON<IDataResponseVideoInf> = await res.json();
+
+      if (data.status !== 200) {
+        setErrorMsg(data.message);
+        return;
+      }
+
+      setVideoInf(data.data);
+      setErrorMsg("");
+    } catch (error) {
+      console.error(error);
+      setErrorMsg("Oop! Something is wrong, maybe that is url.");
+    } finally {
+      setLoading(false);
+    }
+  }, [videoUrl]);
+
+  const handleDownloadVideo = useCallback(async () => {
+    try {
+      setDownloading(true);
+      if (!videoInf?.downloadUrl) {
+        return;
+      }
+
+      await fetch(videoInf.downloadUrl)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const hyperlink = document.createElement("a");
+          hyperlink.href = url;
+          hyperlink.download = "video.mp4";
+          hyperlink.click();
+          window.URL.revokeObjectURL(url);
+        });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setDownloading(false);
+    }
+  }, [videoInf?.downloadUrl]);
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
+    <div className="pt-14">
+      <div className="text-center">
+        <h1 className="font-bold text-4xl">
+          <span className="text-primary">TikTok&nbsp;</span>
+          Video Downloader
+        </h1>
+        <div className="my-4">
+          Try this unique tool for quick, hassle-free downloads from TikTok.
+        </div>
         <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+          Note: We do not allow/support the download of copyrighted material!
         </div>
       </div>
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
+      <div className="flex justify-center">
+        <div>
+          <div className="rounded-md p-1 pl-4 shadow-c0 flex items-stretch gap-4 mt-20 w-[46rem]">
+            <div className="flex-1">
+              <input
+                type="text"
+                className="h-full w-full outline-none"
+                value={videoUrl}
+                onChange={changeVideoUrl}
+              />
+            </div>
+            <AppButton loading={loading} onClick={getVideoInf}>
+              {loading ? "Getting..." : "Get Video"}
+            </AppButton>
+          </div>
+          <div className="text-sm text-red-600 mt-1">{errorMsg}</div>
+        </div>
       </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+      <div className="text-center my-9">
+        By using our service you accept our
+        <span className="text-primary">&nbsp;Terms of Service&nbsp;</span> and
+        <span className="text-primary">&nbsp;Privacy Policy&nbsp;</span>
       </div>
-    </main>
+      {videoInf ? (
+        <div className="flex justify-center">
+          <div className="h-32 p-2 shadow-c0 flex gap-2 w-[34rem]">
+            <div className="relative h-full w-full">
+              <Image
+                src={videoInf?.cover ?? ""}
+                alt="cover"
+                className="rounded-md"
+                fill={true}
+                objectFit="cover"
+              />
+            </div>
+
+            <div className="flex flex-col items-end justify-between">
+              <div className="line-clamp-2">{videoInf?.desc}</div>
+              <AppButton loading={downloading} onClick={handleDownloadVideo}>
+                {downloading ? "Downloading" : "Download"}
+              </AppButton>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
-}
+};
+
+export default Home;
